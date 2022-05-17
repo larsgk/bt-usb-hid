@@ -1,0 +1,4 @@
+config USB_DEVICE_PID
+	default 0x4117
+
+source "Kconfig.zephyr"
