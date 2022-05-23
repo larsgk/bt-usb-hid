@@ -1,132 +1,22 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      @font-face {
+          font-family: UbuntuCondensed;
+          src: url('./UbuntuCondensed-Regular.ttf');
+      }
+
+      html, body {
+        margin:0;
+        height: 100%;
+        background-color: #e0e0e0;
+      }
+    </style>
+  </head>
 <body>
-    <button id="connect">CONNECT</button>
+  <main-app></main-app>
 </body>
-<script>
-
-    const SimpleMouseLinkUUID = '56beb2d8-64eb-4e33-96d4-e3f394041d0b';
-    const SimpleMouseMoveXYUUID = '83986548-8703-4272-a124-84abb9d03217';
-    const SimpleMouseButtonsUUID = '5062c9c1-ca09-47f9-84f6-725ef8091bf9';
-
-    const writeFuncs = {};
-
-    const fetchWriteCharacteristics = async (server) => {
-        const service = await server.getPrimaryService(SimpleMouseLinkUUID);
-        writeFuncs.move_xy = await service.getCharacteristic(SimpleMouseMoveXYUUID);
-        writeFuncs.buttons = await service.getCharacteristic(SimpleMouseButtonsUUID);
-    };
-
-    const trans_val = (val) => {
-        let res = Math.max(-127, Math.min(127, Math.round(val)));
-        return res
-    };
-
-    const move = (x, y) => {
-        if (writeFuncs.move_xy) {
-            let xx = trans_val(x);
-            let yy = trans_val(y);
-            console.log("Try to move ", xx, yy)
-            if (xx || yy) writeFuncs.move_xy.writeValue(new Uint8Array([xx, yy]));
-        }
-    };
-
-    const buttons = (left, right, middle) => {
-        const btn = (left ? 1<<0 : 0) + (right ? 1<<1 : 0) + (middle ? 1<<2 : 0);
-        if (writeFuncs.buttons) {
-            console.log("Mouse buttons:", left, right, middle)
-            writeFuncs.buttons.writeValue(new Uint8Array([btn]));
-        }
-    }
-
-    const openDevice = async (device) => {
-        const server = await device.gatt.connect();
-
-        try {
-            await fetchWriteCharacteristics(server);
-
-            console.log('connected', device);
-        } catch (err) {
-            console.warn(err);
-        }
-    };
-
-    /**
-     * A simple feedback from the keyboard to control the simple mouse link
-     * ASDW = movement (20px)
-     * 123 = mouse buttons (left, middle, right)
-     */
-    const setupKeyHandlers = () => {
-        const btn = {
-            left: false,
-            right: false,
-            middle: false
-        };
-
-        const handleKButtons = (keycode, isdown) => {
-            let btnChange = true;
-            switch(keycode) {
-                case 'Digit1':
-                    btn.left = isdown;
-                break;
-                case 'Digit2':
-                    btn.middle = isdown;
-                break;
-                case 'Digit3':
-                    btn.right = isdown;
-                break;
-                default:
-                    btnChange = false;
-            }
-            if (btnChange) buttons(btn.left, btn.right, btn.middle);
-        }
-
-        const handleKMove = (keycode) => {
-            switch(keycode) {
-                case 'KeyA':
-                    move(-20, 0);
-                break;
-                case 'KeyW':
-                    move(0, -20);
-                break;
-                case 'KeyS':
-                    move(0, 20);
-                break;
-                case 'KeyD':
-                    move(20, 0);
-                break;
-            }
-        }
-
-        window.addEventListener('keydown', e => {
-            if(e.repeat) return;  // Discard automatic repeat
-            handleKButtons(e.code, true);
-            handleKMove(e.code);
-        });
-
-        window.addEventListener('keyup', e => {
-            if(e.repeat) return;  // Discard automatic repeat
-            handleKButtons(e.code, false);
-        });
-    }
-
-    const init = async () => {
-        const connectBtn = document.querySelector("#connect");
-
-        connectBtn.addEventListener('click', async () => {
-            const device = await navigator.bluetooth.requestDevice({
-                filters: [
-                { services: [SimpleMouseLinkUUID] },
-                { name: 'Simple Mouse Link'}
-                ]
-            });
-
-            await openDevice(device);
-        });
-
-        setupKeyHandlers();
-    };
-
-    window.addEventListener('load', init);
-</script>
+<script type="module" src="./web/main-app.js"></script>
 </html>
