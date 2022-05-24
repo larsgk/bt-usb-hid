@@ -17,17 +17,20 @@ const cap_val = (val) => {
 
 export const SimpleDriver = new class extends EventTarget {
     #device
-    #writeFuncs = {};
+    #writeFuncs
 
     constructor() {
         super();
+
+        this.#device = null;
+        this.#writeFuncs = {};
     }
 
     move = (x, y) => {
         if (this.#writeFuncs.move_xy) {
             let xx = cap_val(x);
             let yy = cap_val(y);
-            console.log("Try to move ", xx, yy)
+            console.log("Mouse move:", xx, yy)
             if (xx || yy) this.#writeFuncs.move_xy.writeValue(new Uint8Array([xx, yy]));
         }
     };
@@ -65,10 +68,12 @@ export const SimpleDriver = new class extends EventTarget {
 
     disconnect() {
         this.#device?.gatt?.disconnect();
-        this.#device = undefined;
     }
 
     _disconnected(evt) {
+        this.#device = null;
+        this.#writeFuncs = {};
+        console.log('disconnected');
         this.dispatchEvent(new Event('disconnect'));
     }
 

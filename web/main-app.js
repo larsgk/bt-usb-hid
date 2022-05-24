@@ -88,8 +88,6 @@ template.innerHTML = `
         100% {border-color: darkgreen;}
     }
 
-
-
     .mousebtn {
         display: flex;
         box-sizing: border-box;
@@ -206,7 +204,6 @@ export class MainApp extends HTMLElement {
 
     doMove() {
         if (this.#lastpos) {
-            console.log('Move:', this.#lastpos);
             SimpleDriver.move(this.#lastpos.x*100, this.#lastpos.y*100);
         }
     }
@@ -224,7 +221,7 @@ export class MainApp extends HTMLElement {
         }
     }
 
-    handleConnect(/** @type {CustomEvent} */ evt) {
+    handleConnect() {
         this.#connectbtn.className = 'connected';
     }
 

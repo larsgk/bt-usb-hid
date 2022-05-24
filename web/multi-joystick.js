@@ -56,7 +56,6 @@ export class MultiJoystick extends HTMLElement {
             x: (e.clientX - (rect.left + rect.right) / 2) / rect.width,
             y: (e.clientY - (rect.top + rect.bottom) / 2) / rect.height,
         };
-        // console.log(`pos: ${pos.x}, ${pos.y}`);
         return pos;
     }
 
