@@ -26,16 +26,16 @@ export const SimpleDriver = new class extends EventTarget {
         this.#writeFuncs = {};
     }
 
-    move = (x, y) => {
+    move(x, y) {
         if (this.#writeFuncs.move_xy) {
-            let xx = cap_val(x);
-            let yy = cap_val(y);
+            const xx = cap_val(x);
+            const yy = cap_val(y);
             console.log("Mouse move:", xx, yy)
             if (xx || yy) this.#writeFuncs.move_xy.writeValue(new Uint8Array([xx, yy]));
         }
-    };
+    }
 
-    buttons = (left, right, middle) => {
+    buttons(left, right, middle) {
         const btn = (left ? 1<<0 : 0) + (right ? 1<<1 : 0) + (middle ? 1<<2 : 0);
         if (this.#writeFuncs.buttons) {
             console.log("Mouse buttons:", left, right, middle)
@@ -43,13 +43,13 @@ export const SimpleDriver = new class extends EventTarget {
         }
     }
 
-    fetchWriteCharacteristics = async (server) => {
+    async fetchWriteCharacteristics(server) {
         const service = await server.getPrimaryService(SimpleMouseLinkUUID);
         this.#writeFuncs.move_xy = await service.getCharacteristic(SimpleMouseMoveXYUUID);
         this.#writeFuncs.buttons = await service.getCharacteristic(SimpleMouseButtonsUUID);
-    };
+    }
 
-    openDevice = async (device) => {
+    async openDevice(device) {
         const server = await device.gatt.connect();
 
         try {
@@ -64,7 +64,7 @@ export const SimpleDriver = new class extends EventTarget {
         } catch (err) {
             console.warn(err);
         }
-    };
+    }
 
     disconnect() {
         this.#device?.gatt?.disconnect();
