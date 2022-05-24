@@ -100,6 +100,13 @@ template.innerHTML = `
         justify-content: center;
         align-items: center;
         font-size: 2em;
+        touch-action: none;
+        user-select: none;
+    }
+
+    .mousebtn[pressed] {
+        background-color: black;
+        color: white;
     }
 
 
@@ -148,7 +155,7 @@ export class MainApp extends HTMLElement {
         this.#lastpos = null;
 
         this.doMove = this.doMove.bind(this);
-        this.doScan = this.doScan.bind(this);
+        this.toggleConnection = this.toggleConnection.bind(this);
 
         this.handleConnect = this.handleConnect.bind(this);
         this.handleDisconnect = this.handleDisconnect.bind(this);
@@ -165,7 +172,7 @@ export class MainApp extends HTMLElement {
         this.#joystick = this.shadowRoot.querySelector('multi-joystick');
         this.#joystick.addEventListener('move', e => this.#lastpos = e.detail.pos);
 
-        this.#connectbtn.addEventListener('click', this.doScan);
+        this.#connectbtn.addEventListener('click', this.toggleConnection);
 
         SimpleDriver.addEventListener('connect', this.handleConnect);
         SimpleDriver.addEventListener('disconnect', this.handleDisconnect);
@@ -183,6 +190,9 @@ export class MainApp extends HTMLElement {
 
         const btnchange = () => {
             SimpleDriver.buttons(btn.left, btn.right, btn.middle);
+            btn.left ? this.#btnleft.setAttribute('pressed', '') : this.#btnleft.removeAttribute('pressed');
+            btn.middle ? this.#btnmiddle.setAttribute('pressed', '') : this.#btnmiddle.removeAttribute('pressed');
+            btn.right ? this.#btnright.setAttribute('pressed', '') : this.#btnright.removeAttribute('pressed');
         }
 
         this.#btnleft.addEventListener('pointerdown', e => {btn.left=true; btnchange()});
@@ -201,18 +211,23 @@ export class MainApp extends HTMLElement {
         }
     }
 
-    // Start scanning for Thingy52s
-    doScan() {
-        this.#connectbtn.className = 'connecting';
-        SimpleDriver.scan();
+    async toggleConnection() {
+        if (this.#connectbtn.className === 'connected') {
+            SimpleDriver.disconnect();
+        } else if (this.#connectbtn.className == 'disconnected') {
+            try {
+                this.#connectbtn.className = 'connecting';
+                await SimpleDriver.scan();
+            } catch(err) {
+                this.#connectbtn.className = 'disconnected';
+            }
+        }
     }
 
-    // Handle when a Thingy52 is connected and ready
     handleConnect(/** @type {CustomEvent} */ evt) {
         this.#connectbtn.className = 'connected';
     }
 
-    // Handle a disconnect event (e.g. when the Thingy52 us switched off)
     handleDisconnect() {
         this.#connectbtn.className = 'disconnected';
     }

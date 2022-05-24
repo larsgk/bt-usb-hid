@@ -55,6 +55,8 @@ export const SimpleDriver = new class extends EventTarget {
             console.log('connected', device);
             this.dispatchEvent(new Event('connect'));
 
+            device.ongattserverdisconnected = e => this._disconnected(e);
+
             this.#device = device;
         } catch (err) {
             console.warn(err);
