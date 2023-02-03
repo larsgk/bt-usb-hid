@@ -2,6 +2,8 @@
 import { MultiJoystick } from './multi-joystick.js';
 import { SimpleDriver } from './simple-driver.js';
 
+const _use_velocity = false;
+
 const template = document.createElement('template');
 template.innerHTML = `
 <style>
@@ -168,14 +170,26 @@ export class MainApp extends HTMLElement {
         this.#initButtonHandlers();
 
         this.#joystick = this.shadowRoot.querySelector('multi-joystick');
-        this.#joystick.addEventListener('move', e => this.#lastpos = e.detail.pos);
+
+        if (_use_velocity) {
+            this.#joystick.addEventListener('move', e => {
+                this.#lastpos = e.detail.pos;
+                if (this.#lastpos) {
+                    SimpleDriver.velocity(this.#lastpos.x*2000, this.#lastpos.y*2000);
+                } else {
+                    SimpleDriver.velocity(0, 0);
+                }
+            });
+        } else {
+            this.#joystick.addEventListener('move', e => this.#lastpos = e.detail.pos);
+            setInterval(this.doMove, 100);
+        }
 
         this.#connectbtn.addEventListener('click', this.toggleConnection);
 
         SimpleDriver.addEventListener('connect', this.handleConnect);
         SimpleDriver.addEventListener('disconnect', this.handleDisconnect);
 
-        setInterval(this.doMove, 100);
     }
 
     // TODO: Cleanup

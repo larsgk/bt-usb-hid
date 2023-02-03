@@ -8,6 +8,7 @@
 
 const SimpleMouseLinkUUID = '56beb2d8-64eb-4e33-96d4-e3f394041d0b';
 const SimpleMouseMoveXYUUID = '83986548-8703-4272-a124-84abb9d03217';
+const SimpleMouseVelocityXYUUID = '3cabb56e-27a7-45fa-996a-582f581d6aa3';
 const SimpleMouseButtonsUUID = '5062c9c1-ca09-47f9-84f6-725ef8091bf9';
 
 const cap_val = (val) => {
@@ -31,7 +32,16 @@ export const SimpleDriver = new class extends EventTarget {
             const xx = cap_val(x);
             const yy = cap_val(y);
             console.log("Mouse move:", xx, yy)
-            if (xx || yy) this.#writeFuncs.move_xy.writeValue(new Uint8Array([xx, yy]));
+            if (xx || yy) this.#writeFuncs.move_xy.writeValue(new Int8Array([xx, yy]));
+        }
+    }
+
+    velocity(x, y) {
+        if (this.#writeFuncs.velocity_xy) {
+            const xx = Math.round(x);
+            const yy = Math.round(y);
+            console.log("Mouse velocity:", xx, yy)
+            this.#writeFuncs.velocity_xy.writeValue(new Int16Array([xx, yy]));
         }
     }
 
@@ -46,6 +56,7 @@ export const SimpleDriver = new class extends EventTarget {
     async fetchWriteCharacteristics(server) {
         const service = await server.getPrimaryService(SimpleMouseLinkUUID);
         this.#writeFuncs.move_xy = await service.getCharacteristic(SimpleMouseMoveXYUUID);
+        this.#writeFuncs.velocity_xy = await service.getCharacteristic(SimpleMouseVelocityXYUUID);
         this.#writeFuncs.buttons = await service.getCharacteristic(SimpleMouseButtonsUUID);
     }
 

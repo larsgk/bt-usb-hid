@@ -7,16 +7,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
+#include <zephyr/kernel.h>
 
-#include <usb/usb_device.h>
-#include <usb/class/usb_hid.h>
+#include <zephyr/usb/usb_device.h>
+#include <zephyr/usb/class/usb_hid.h>
 
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/uuid.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/uuid.h>
 
 #include "simplems.h"
 
@@ -82,8 +82,52 @@ static void sm_buttons_cb(uint8_t buttons)
 	}
 }
 
+// Velocity is ~ *2 px/s
+static int32_t _dx;
+static int32_t _dy;
+static int16_t _vx;
+static int16_t _vy;
+
+static void sm_velocity_xy_cb(int16_t vx, int16_t vy) {
+	printk("Velocity (x,y) = (%d, %d)\n", vx, vy);
+
+	_vx = vx;
+	_vy = vy;
+}
+
+#define ABS(x)	(x > 0 ? x : -x)
+
+static int16_t overflow(uint32_t *delta, uint16_t velocity)
+{
+	int16_t overflow;
+	*delta += velocity;
+
+	overflow = *delta / 256;
+
+	*delta = *delta % 0xff;
+
+	return overflow;
+}
+
+void apply_velocity(struct k_timer *dummy)
+{
+	int8_t mx;
+	int8_t my;
+
+	mx = (int8_t)overflow(&_dx, _vx);
+	my = (int8_t)overflow(&_dy, _vy);
+
+	if (mx || my) {
+		sm_move_xy_cb(mx, my);
+	}
+}
+
+K_TIMER_DEFINE(velocity_timer, apply_velocity, NULL);
+
+
 struct bt_simple_mouse_cb sm_cbs = {
 	.move_xy = sm_move_xy_cb,
+	.velocity_xy = sm_velocity_xy_cb,
 	.buttons = sm_buttons_cb,
 };
 
@@ -110,12 +154,16 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		printk("Connection failed (err 0x%02x)\n", err);
 	} else {
 		printk("Connected\n");
+		_dx = 0;
+		_dy = 0;
+		k_timer_start(&velocity_timer, K_MSEC(8), K_MSEC(8));
 	}
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason 0x%02x)\n", reason);
+	k_timer_stop(&velocity_timer);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
