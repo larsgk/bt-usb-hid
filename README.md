@@ -1,6 +1,8 @@
 EARLY PROTO/DRAFT :)
 
-## Simple HID Link
+## Simple Mouse
+
+A small post about the project can be found [here](https://dev.to/denladeside/zephyr-web-bluetooth-and-accessibility-4ddm)
 
 This project contains firmware to make a bridge between a standard USB HID mouse and
 a very simplified BLE GATT service.
