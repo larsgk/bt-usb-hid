@@ -2,7 +2,7 @@
 import { MultiJoystick } from './multi-joystick.js';
 import { SimpleDriver } from './simple-driver.js';
 
-const _use_velocity = false;
+const _use_velocity = true;
 
 const template = document.createElement('template');
 template.innerHTML = `
